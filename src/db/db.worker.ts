@@ -1,37 +1,66 @@
 // src/db/db.worker.ts
+import { initDB, addOperations, getAllOperations } from './storage';
+import { WorkerActionSchema, type IWorkerResponse } from '../types';
 
-// Worker'ın kendi context'ini tanımlıyoruz, böylece TypeScript hata vermez.
+// Worker context tanımlaması
 const ctx: Worker = self as any;
 
-// Ana thread'den (UI) gelen mesajları dinleyen olay yakalayıcı.
+// Mesaj dinleyicisi
 ctx.onmessage = async (event: MessageEvent) => {
-  // Gelen veriyi türüne ve içeriğine göre ayırıyoruz.
-  const { type, payload } = event.data;
+  // 1. Gelen mesajı Zod şeması ile doğrula (Validation)
+  const result = WorkerActionSchema.safeParse(event.data);
 
-  console.log(`[Worker] Mesaj alındı: ${type}`, payload);
+  if (!result.success) {
+    console.error('[Worker] Geçersiz mesaj formatı:', result.error);
+    sendResponse({
+      type: 'ERROR',
+      error: 'Veri formatı hatalı: ' + result.error.message,
+    });
+    return;
+  }
+
+  const action = result.data;
 
   try {
-    switch (type) {
+    // 2. Mesaj türüne göre işlem yap (Routing)
+    switch (action.type) {
       case 'INIT_DB':
-        // Veritabanı başlatma isteği geldiğinde çalışacak blok.
-        // await initDB(); // İleride yazacağız
-        ctx.postMessage({ type: 'DB_READY', status: true });
+        await initDB();
+        sendResponse({ type: 'DB_READY', status: true });
         break;
 
       case 'WRITE_OPS':
-        // Toplu operasyon yazma isteği.
-        // await bulkWrite(payload); // İleride yazacağız
-        ctx.postMessage({ type: 'WRITE_COMPLETE', count: payload.length });
+        // Payload Zod tarafından doğrulandığı için güvenle kullanabiliriz
+        await addOperations(action.payload);
+        sendResponse({
+          type: 'WRITE_COMPLETE',
+          count: action.payload.length,
+        });
         break;
 
-      default:
-        console.warn(`[Worker] Bilinmeyen komut: ${type}`);
+      case 'READ_ALL':
+        const ops = await getAllOperations();
+        // Burada normalde snapshot birleştirme mantığı olacak
+        // Şimdilik ham operasyonları dönüyoruz (Mock)
+        sendResponse({
+          type: 'DATA_LOADED',
+          payload: [], // Geçici olarak boş dizi, ileride dolduracağız
+        });
+        break;
     }
-  } catch (error) {
-    // Herhangi bir hata olursa ana thread'e bildiriyoruz.
-    ctx.postMessage({ type: 'ERROR', error: String(error) });
+  } catch (err) {
+    console.error('[Worker] İşlem hatası:', err);
+    sendResponse({
+      type: 'ERROR',
+      error: err instanceof Error ? err.message : 'Bilinmeyen hata',
+    });
   }
 };
 
-// Worker'ın başarıyla yüklendiğini teyit etmek için bir log.
-console.log('[Worker] AetherSync DB Worker başlatıldı.');
+// UI'a tip güvenli cevap dönmek için yardımcı fonksiyon
+function sendResponse(response: IWorkerResponse) {
+  ctx.postMessage(response);
+}
+
+// Başlangıç logu
+console.log('[Worker] AetherSync DB Worker hazır ve dinliyor.');

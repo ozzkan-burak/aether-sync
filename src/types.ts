@@ -52,4 +52,4 @@ export const WorkerResponseSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ERROR'), error: z.string() }),
 ]);
 
-export type WorkerResponse = z.infer<typeof WorkerResponseSchema>;
+export type IWorkerResponse = z.infer<typeof WorkerResponseSchema>;

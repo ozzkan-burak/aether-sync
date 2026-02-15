@@ -47,20 +47,30 @@ Binary Serialization: JSON yükünü azaltmak için MessagePack veya Protobuf ku
 
 Idempotency: Aynı operasyonun birden fazla kez uygulanmasının sistem durumunu bozmaması.
 
-graph TD
+```graph TD
+    %% User Interaction Layer
     A[UI / User Input] -->|1. Optimistic Update| B[Reactive State]
     A -->|2. Create Operation| C[Operation Queue]
     
-    subgraph "Web Worker (Background Thread)"
-        C -->|3. Batch Write| D[(IndexedDB)]
+    %% Background Processing Layer
+    subgraph Web_Worker [Web Worker - Background Thread]
+        C -->|3. Batch Write| D[(IndexedDB Storage)]
         D -->|4. Fetch Unsynced| E[Sync Manager]
     end
 
-    subgraph "Rust / WASM Layer"
+    %% Computational Layer
+    subgraph WASM_Layer [Rust / WASM Layer]
         E -->|5. Resolve Conflicts| F{CRDT Engine}
         F -->|6. Converged State| E
     end
 
+    %% Networking Layer
     E -->|7. Binary Sync| G[Remote Server / Peers]
     G -->|8. Remote Ops| E
     E -->|9. Apply Remote| B
+
+    %% Styling
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style D fill:#bbf,stroke:#333,stroke-width:2px
+    style F fill:#dfd,stroke:#333,stroke-width:2px
+    style G fill:#fdd,stroke:#333,stroke-width:2px

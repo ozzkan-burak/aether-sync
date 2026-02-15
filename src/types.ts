@@ -1,46 +1,55 @@
 // src/types.ts
+import { z } from 'zod';
 
 // --- Temel Veri Modelleri ---
 
-// Notun kendisini temsil eden arayüz.
-// Uygulamanın ana veri birimi.
-export interface Note {
-  id: string; // Benzersiz kimlik (UUID)
-  title: string; // Not başlığı
-  content: string; // Not içeriği
-  createdAt: number; // Oluşturulma zamanı (Timestamp)
-  updatedAt: number; // Son güncellenme zamanı
-}
+// Not Şeması: Verinin yapısını ve kurallarını (validation) tanımlar.
+export const NoteSchema = z.object({
+  id: z.string().uuid({ message: 'Geçersiz UUID formatı' }),
+  title: z.string().min(1, { message: 'Başlık boş olamaz' }),
+  content: z.string(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
+// Şemadan TypeScript tipini otomatik türetiyoruz.
+export type Note = z.infer<typeof NoteSchema>;
 
 // --- Operasyon Günlüğü (CRDT / Event Sourcing) ---
 
-// Yapılan işlemin türünü belirleyen enum.
-// TypeScript string yerine bu değerleri kullanarak hata yapmayı önler.
-export type OperationType = 'INSERT' | 'UPDATE' | 'DELETE';
+export const OperationTypeSchema = z.enum(['INSERT', 'UPDATE', 'DELETE']);
+export type OperationType = z.infer<typeof OperationTypeSchema>;
 
-// Veritabanına yazılacak atomik işlem birimi.
-// Her değişiklik bir operasyon olarak saklanır.
-export interface Operation {
-  id: string; // Operasyonun benzersiz kimliği (UUID)
-  noteId: string; // Hangi nota ait olduğu
-  type: OperationType; // İşlem türü (EKLE/SİL/GÜNCELLE)
-  payload: Partial<Note>; // Değişen veri (Tam not veya sadece bir kısmı)
-  timestamp: number; // İşlemin yapıldığı zaman
-  status: 'PENDING' | 'SYNCED'; // Senkronizasyon durumu
-}
+export const OperationSchema = z.object({
+  id: z.string().uuid(),
+  noteId: z.string().uuid(),
+  type: OperationTypeSchema,
+  // Partial: Güncellemelerde tüm alanları göndermek zorunda değiliz.
+  payload: NoteSchema.partial(),
+  timestamp: z.number(),
+  status: z.enum(['PENDING', 'SYNCED']),
+});
+
+export type Operation = z.infer<typeof OperationSchema>;
 
 // --- Worker İletişim Protokolü ---
 
-// UI'dan Worker'a giden mesaj tipleri.
-// Discriminated Union (Ayırt Edici Birleşim) deseni kullanıyoruz.
-export type WorkerAction =
-  | { type: 'INIT_DB' } // Veritabanını başlat
-  | { type: 'WRITE_OPS'; payload: Operation[] } // Toplu operasyon yaz
-  | { type: 'READ_ALL' }; // Tüm verileri oku
+// Worker'a gelen mesajları doğrulayan şema.
+// Discriminated Union: 'type' alanına göre hangi şemanın geçerli olduğunu anlar.
+export const WorkerActionSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('INIT_DB') }),
+  z.object({ type: z.literal('WRITE_OPS'), payload: z.array(OperationSchema) }),
+  z.object({ type: z.literal('READ_ALL') }),
+]);
 
-// Worker'dan UI'a dönen cevap tipleri.
-export type WorkerResponse =
-  | { type: 'DB_READY'; status: boolean } // DB hazır bilgisi
-  | { type: 'WRITE_COMPLETE'; count: number } // Yazma tamamlandı bilgisi
-  | { type: 'DATA_LOADED'; payload: Note[] } // Veri yüklendi cevabı
-  | { type: 'ERROR'; error: string }; // Hata durumu
+export type WorkerAction = z.infer<typeof WorkerActionSchema>;
+
+// Worker'dan dönen cevapları doğrulayan şema.
+export const WorkerResponseSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('DB_READY'), status: z.boolean() }),
+  z.object({ type: z.literal('WRITE_COMPLETE'), count: z.number() }),
+  z.object({ type: z.literal('DATA_LOADED'), payload: z.array(NoteSchema) }),
+  z.object({ type: z.literal('ERROR'), error: z.string() }),
+]);
+
+export type WorkerResponse = z.infer<typeof WorkerResponseSchema>;

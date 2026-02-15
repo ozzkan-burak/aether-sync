@@ -47,7 +47,7 @@ Binary Serialization: JSON yükünü azaltmak için MessagePack veya Protobuf ku
 
 Idempotency: Aynı operasyonun birden fazla kez uygulanmasının sistem durumunu bozmaması.
 
-graph TD
+```graph TD
     %% Katmanlar arası akış
     User[Kullanıcı Girişi] -->|1. Arayüzü Güncelle| UI[Optimistic UI State]
     User -->|2. İşlem Oluştur| Queue[Operation Queue]
@@ -71,3 +71,4 @@ graph TD
     style DB fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     style CRDT fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     style Server fill:#fff3e0,stroke:#e65100,stroke-width:2px
+```

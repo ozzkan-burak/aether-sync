@@ -48,6 +48,15 @@ Binary Serialization: JSON yükünü azaltmak için MessagePack veya Protobuf ku
 
 Idempotency: Aynı operasyonun birden fazla kez uygulanmasının sistem durumunu bozmaması.
 
+Tasarım Felsefesi: Neden Önce "Headless"?
+AetherSync, bir Headless Sync SDK (Arayüzsüz Senkronizasyon Kiti) olarak işlev görmek üzere kasıtlı olarak Saf (Vanilla) TypeScript ile inşa edilmiştir. Çekirdek mantık (/src/core, /src/db, /src/sync), UI (Arayüz) katmanından kesin çizgilerle ayrılmıştır.
+
+Framework Bağımsızlığı: Bu motor; React, Vue, Svelte, React Native veya Electron uygulamalarına hiçbir değişiklik yapmadan entegre edilebilir.
+
+Performans: Kritik senkronizasyon işlemleri, arayüz oluşturma döngülerinin (Virtual DOM) getirdiği yükten etkilenmeden, izole bir Web Worker üzerinde çalışır.
+
+Uzun Ömürlülük: Arayüz trendleri değişse de (örn: Class Components -> Hooks -> Signals), veri senkronizasyon mantığı sabit ve kararlı kalır.
+
 ```mermaid
 graph TD
   A[UI / User Input] -->|1. Optimistic Update| B[Reactive State]

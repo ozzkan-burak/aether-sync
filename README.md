@@ -48,27 +48,25 @@ Binary Serialization: JSON yükünü azaltmak için MessagePack veya Protobuf ku
 Idempotency: Aynı operasyonun birden fazla kez uygulanmasının sistem durumunu bozmaması.
 
 ```graph TD
-    %% Katmanlar arası akış
-    User[Kullanıcı Girişi] -->|1. Arayüzü Güncelle| UI[Optimistic UI State]
-    User -->|2. İşlem Oluştur| Queue[Operation Queue]
-
-    subgraph Web_Worker [Web Worker Arka Plan Katmanı]
-        Queue -->|3. Toplu Yazma| DB[(IndexedDB Yerel Depo)]
-        DB -->|4. Senkronize Edilmemişleri Çek| Sync[Sync Manager]
+    A[UI / User Input] -->|1. Optimistic Update| B[Reactive State]
+    A -->|2. Create Operation| C[Operation Queue]
+    
+    subgraph Web_Worker [Web Worker - Background Thread]
+        C -->|3. Batch Write| D[(IndexedDB Storage)]
+        D -->|4. Fetch Unsynced| E[Sync Manager]
     end
 
-    subgraph WASM_Engine [Rust / WASM Hesaplama Katmanı]
-        Sync -->|5. Çakışma Çözümü| CRDT{CRDT Engine}
-        CRDT -->|6. Birleşmiş Veri| Sync
+    subgraph WASM_Layer [Rust / WASM Layer]
+        E -->|5. Resolve Conflicts| F{CRDT Engine}
+        F -->|6. Converged State| E
     end
 
-    Sync -->|7. Binary Paket| Server[Uzak Sunucu / Eşler]
-    Server -->|8. Uzak Güncellemeler| Sync
-    Sync -->|9. Nihai Veriyi Uygula| UI
+    E -->|7. Binary Sync| G[Remote Server / Peers]
+    G -->|8. Remote Ops| E
+    E -->|9. Apply Remote| B
 
-    %% Stil Tanımlamaları
-    style User fill:#fff,stroke:#333,stroke-width:2px
-    style DB fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    style CRDT fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    style Server fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style D fill:#bbf,stroke:#333,stroke-width:2px
+    style F fill:#dfd,stroke:#333,stroke-width:2px
+    style G fill:#fdd,stroke:#333,stroke-width:2px
 ```

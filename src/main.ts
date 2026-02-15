@@ -1,11 +1,23 @@
 // src/main.ts
 import { v4 as uuidv4 } from 'uuid';
-import { Operation, WorkerAction, WorkerResponse } from './types';
+import type { Operation, WorkerAction, WorkerResponse } from './types';
 
 // Worker'ı başlatıyoruz
 const dbWorker = new Worker(new URL('./db/db.worker.ts', import.meta.url), {
   type: 'module',
 });
+
+dbWorker.onerror = (error) => {
+  console.error('WORKER CİDDİ HATA:', error);
+  alert('Worker yüklenemedi! Konsola bak.');
+};
+
+dbWorker.onmessageerror = (error) => {
+  console.error('WORKER MESAJ HATASI:', error);
+};
+
+// Worker'ın başlayıp başlamadığını anlamak için hemen bir ping atalım
+console.log(" Main thread başladı, Worker'a selam gönderiliyor...");
 
 const logDiv = document.getElementById('logs')!;
 const btnInit = document.getElementById('btn-init')!;
@@ -23,17 +35,17 @@ dbWorker.onmessage = (event: MessageEvent) => {
   const response: WorkerResponse = event.data;
   switch (response.type) {
     case 'DB_READY':
-      log('✅ Veritabanı Hazır.');
+      log('Veritabanı Hazır.');
       break;
     case 'WRITE_COMPLETE':
-      log(`💾 Yazma Tamamlandı: ${response.count} işlem.`);
+      log(`Yazma Tamamlandı: ${response.count} işlem.`);
       break;
     case 'DATA_LOADED':
-      log(`📂 Veri Yüklendi. (Konsola bakınız)`);
+      log(`Veri Yüklendi. (Konsola bakınız)`);
       console.table(response.payload);
       break;
     case 'ERROR':
-      log(`❌ HATA: ${response.error}`, true);
+      log(`HATA: ${response.error}`, true);
       break;
   }
 };

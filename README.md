@@ -4,7 +4,7 @@
 
 Bu proje, veriyi merkezi bir veritabanının statik bir kaydı olarak değil, yerel cihazlarda yaşayan, zamanla birleşen ve tutarlılığa ulaşan (eventual consistency) bir "olay akışı" olarak ele alır.
 
-## 🏗 Architecture & Core Principles
+## Architecture & Core Principles
 
 AetherSync, dağıtık sistemlerin karmaşıklığını yönetmek için üç ana sütun üzerine inşa edilmiştir:
 
@@ -22,7 +22,7 @@ Her değişiklik bir "Operation" (Op) olarak kaydedilir. Dağıtık sistemlerde 
 
 ---
 
-## 🛠 Technical Stack
+## Technical Stack
 
 Proje, dış bağımlılıkları minimize ederek **Saf (Vanilla) TypeScript** ile inşa edilmiştir.
 

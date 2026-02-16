@@ -34,7 +34,7 @@ Proje, dış bağımlılıkları minimize ederek **Saf (Vanilla) TypeScript** il
 
 ---
 
-## 🚀 Implementation Roadmap
+## Implementation Roadmap
 
 ### Phase 1: The Foundation (Completed)
 

@@ -1,78 +1,95 @@
-Project Name: AetherSync
-High-Performance, Local-First Sync Engine with Rust-Powered CRDTs
+# AetherSync: High-Performance, Local-First Synchronization Engine
 
-AetherSync, modern web uygulamaları için düşük gecikmeli (zero-latency), çevrimdışı öncelikli (offline-first) ve çakışmasız (conflict-free) bir veri senkronizasyon motorudur. Bu proje, veriyi merkezi bir veritabanının statik bir kaydı olarak değil, yerel cihazlarda yaşayan ve zamanla birleşen bir "olay akışı" (event stream) olarak ele alır.
+**AetherSync**, modern web uygulamaları için düşük gecikmeli (zero-latency), çevrimdışı öncelikli (offline-first) ve çakışma dirençli (conflict-resilient) bir veri senkronizasyon motorudur.
 
-Architecture & Core Principles
-AetherSync üç ana sütun üzerine inşa edilmiştir:
+Bu proje, veriyi merkezi bir veritabanının statik bir kaydı olarak değil, yerel cihazlarda yaşayan, zamanla birleşen ve tutarlılığa ulaşan (eventual consistency) bir "olay akışı" olarak ele alır.
 
-Local-First Persistence: Kullanıcı etkileşimleri doğrudan IndexedDB üzerinde, ana iş parçacığını (Main Thread) bloklamayan bir Web Worker aracılığıyla işlenir.
+## 🏗 Architecture & Core Principles
 
-Event Sourcing & CRDT: Her değişiklik bir "Operation" (Op) olarak kaydedilir. Çakışma çözümleri (Conflict Resolution), matematiksel tutarlılığı garanti eden LWW (Last-Write-Wins) ve CRDT algoritmaları ile yönetilir.
+AetherSync, dağıtık sistemlerin karmaşıklığını yönetmek için üç ana sütun üzerine inşa edilmiştir:
 
-WASM Computation Layer: Karmaşık veri birleştirme ve fark hesaplama (diffing) işlemleri, yüksek performans için Rust (WebAssembly) katmanında gerçekleştirilir.
+### 1. Local-First Persistence (Yerel Öncelikli Kalıcılık)
 
-Technical Stack
-Core: JavaScript (ESNext) / TypeScript
+Kullanıcı etkileşimleri ağ durumundan bağımsızdır. Tüm veriler doğrudan **IndexedDB** üzerine yazılır. Bu işlem, ana iş parçacığını (Main Thread) bloklamamak için izole bir **Web Worker** üzerinde gerçekleştirilir. Sonuç: **0ms Gecikme Hissi.**
 
-Storage: IndexedDB (via idb wrapper)
+### 2. Event Sourcing & Vector Clocks
 
-Logic: Rust (WASM) for Conflict-Free Replicated Data Types
+Her değişiklik bir "Operation" (Op) olarak kaydedilir. Dağıtık sistemlerde fiziksel zamanın güvenilmezliği nedeniyle, olayların sırasını ve nedenselliğini (Causality) takip etmek için **Vector Clocks (Vektör Saatleri)** algoritması kullanılır.
 
-Communication: WebSockets (Binary Protocol / Protocol Buffers)
+### 3. Smart Conflict Resolution (Akıllı Çakışma Çözümü)
 
-Concurrency: Web Workers (Dedicated Worker for DB I/O)
+Çevrimdışı modda yapılan çakışan değişiklikler (Concurrent Updates), klasik "Son Yazan Kazanır" mantığıyla silinmez. Sistem, **Custom Merge Strategies** kullanarak veriyi birleştirir ve veri kaybını (Data Loss) önler.
 
-🛠 Implementation Roadmap
-Phase 1: The Foundation (Current)
-[ ] Multi-threaded IndexedDB abstraction layer.
+---
 
-[ ] Batch write mechanism for high-frequency updates.
+## 🛠 Technical Stack
 
-[ ] Basic operation log schema design.
+Proje, dış bağımlılıkları minimize ederek **Saf (Vanilla) TypeScript** ile inşa edilmiştir.
 
-Phase 2: The Brain (Rust/WASM)
-[ ] Rust-based CRDT implementation.
+- **Core:** TypeScript (Strict Mode)
+- **Storage:** IndexedDB (via idb wrapper)
+- **Logic:** Custom Conflict Resolution Algorithm (Vector Clocks & Causality Tracking)
+- **Communication:** WebSockets (JSON with Batching Optimization)
+- **Concurrency:** Web Workers (Dedicated Worker for I/O & Logic)
 
-[ ] WASM bridge for efficient memory sharing between JS and Rust.
+---
 
-Phase 3: The Bridge (Sync)
-[ ] WebSocket provider for real-time operation broadcast.
+## 🚀 Implementation Roadmap
 
-[ ] Vector clocks for causal ordering of events.
+### Phase 1: The Foundation (Completed)
 
-Research Points & Deep Dive
-Optimistic UI: Kullanıcı deneyimini maksimize etmek için ağ onayı beklenmeden yapılan arayüz güncellemeleri.
+- [x] Multi-threaded IndexedDB abstraction layer (Worker Thread).
+- [x] Basic operation log schema design (UUID based).
+- [x] Zod-based runtime validation.
 
-Binary Serialization: JSON yükünü azaltmak için MessagePack veya Protobuf kullanımı.
+### Phase 2: The Logic (Completed)
 
-Idempotency: Aynı operasyonun birden fazla kez uygulanmasının sistem durumunu bozmaması.
+- [x] **Vector Clock Implementation:** Mantıksal saatler ile olay sıralama.
+- [x] **Outbox Pattern:** Çevrimdışı değişikliklerin kuyruklanması.
+- [x] **Optimistic UI Updates:** Ağ cevabı beklenmeden arayüz güncelleme.
 
-Tasarım Felsefesi: Neden Önce "Headless"?
-AetherSync, bir Headless Sync SDK (Arayüzsüz Senkronizasyon Kiti) olarak işlev görmek üzere kasıtlı olarak Saf (Vanilla) TypeScript ile inşa edilmiştir. Çekirdek mantık (/src/core, /src/db, /src/sync), UI (Arayüz) katmanından kesin çizgilerle ayrılmıştır.
+### Phase 3: The Network & Sync (Completed)
 
-Framework Bağımsızlığı: Bu motor; React, Vue, Svelte, React Native veya Electron uygulamalarına hiçbir değişiklik yapmadan entegre edilebilir.
+- [x] **WebSocket Server:** Node.js tabanlı mock broadcast sunucusu.
+- [x] **Smart Batching (Debounce):** Yüksek frekanslı güncellemelerin (örn: text input) paketlenerek gönderilmesi.
+- [x] **Conflict Detection:** Eş zamanlı (Concurrent) değişikliklerin tespiti ve "Smart Merge" ile birleştirilmesi.
 
-Performans: Kritik senkronizasyon işlemleri, arayüz oluşturma döngülerinin (Virtual DOM) getirdiği yükten etkilenmeden, izole bir Web Worker üzerinde çalışır.
+---
 
-Uzun Ömürlülük: Arayüz trendleri değişse de (örn: Class Components -> Hooks -> Signals), veri senkronizasyon mantığı sabit ve kararlı kalır.
+## Research Points & Deep Dive
+
+- **Optimistic UI:** Kullanıcı deneyimini maksimize etmek için ağ onayı beklenmeden yapılan, "başarılı olacağı varsayılan" arayüz güncellemeleri.
+- **Batching Strategy:** 1000 tuş vuruşunu tek tek göndermek yerine, "Debounce" mekanizması ile anlamlı paketler halinde sunucuya ileterek bant genişliği optimizasyonu.
+- **Eventual Consistency:** Sistemin anlık olarak değil, zaman içinde (tüm mesajlar iletildiğinde) tutarlı hale geleceğinin matematiksel garantisi.
+
+---
+
+## Tasarım Felsefesi: Neden "Headless"?
+
+AetherSync, bir **Headless Sync SDK** (Arayüzsüz Senkronizasyon Kiti) olarak işlev görmek üzere tasarlanmıştır. Çekirdek mantık (`/src/db`, `/src/sync`), UI (Arayüz) katmanından kesin çizgilerle ayrılmıştır.
+
+- **Framework Bağımsızlığı:** Bu motor; React, Vue, Svelte, React Native veya Electron uygulamalarına hiçbir mimari değişiklik gerektirmeden entegre edilebilir.
+- **Performans:** Kritik senkronizasyon işlemleri, arayüz oluşturma döngülerinin (Virtual DOM / Re-renders) getirdiği yükten etkilenmeden, arka planda sessizce çalışır.
+- **Uzun Ömürlülük:** Arayüz trendleri değişse de veri senkronizasyon mantığı sabit ve kararlı kalır.
 
 ```mermaid
 graph TD
-  A[UI / User Input] -->|1. Optimistic Update| B[Reactive State]
-  A -->|2. Create Operation| C[Operation Queue]
+  A[UI / User Input] -->|1. Debounce & Batch| B[Main Thread Logic]
 
-  subgraph Web_Worker [Web Worker - Background Thread]
-      C -->|3. Batch Write| D[(IndexedDB Storage)]
-      D -->|4. Fetch Unsynced| E[Sync Manager]
+  subgraph Main_Context [Main Thread - Application Logic]
+      B{Conflict Manager}
+      B -->|2. Optimistic Update| A
+      B -->|3. Vector Clock Comparison| B
+      B -->|4. Smart Merge Strategy| A
   end
 
-  subgraph WASM_Layer [Rust / WASM Layer]
-      E -->|5. Resolve Conflicts| F{CRDT Engine}
-      F -->|6. Converged State| E
+  subgraph Web_Worker [Web Worker - Storage Layer]
+      B -->|5. Async Write (PostMessage)| D[(IndexedDB Storage)]
+      D -.->|Load History| B
   end
 
-  E -->|7. Binary Sync| G[Remote Server / Peers]
-  G -->|8. Remote Ops| E
-  E -->|9. Apply Remote| B
+  subgraph Network_Layer [Network / WebSocket]
+      B -->|6. JSON Payload| G[WebSocket Server]
+      G -->|7. Broadcast Ops| B
+  end
 ```

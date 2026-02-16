@@ -10,6 +10,8 @@ export const NoteSchema = z.object({
 export type Note = z.infer<typeof NoteSchema>;
 
 export const OperationTypeSchema = z.enum(['INSERT', 'UPDATE', 'DELETE']);
+export const VectorClockSchema = z.record(z.string(), z.number());
+export type VectorClock = z.infer<typeof VectorClockSchema>;
 
 export const OperationSchema = z.object({
   id: z.string().uuid(),
@@ -17,6 +19,7 @@ export const OperationSchema = z.object({
   type: OperationTypeSchema,
   payload: NoteSchema.partial(),
   timestamp: z.number(),
+  vectorClock: VectorClockSchema,
   status: z.enum(['PENDING', 'SYNCED']),
 });
 export type Operation = z.infer<typeof OperationSchema>;

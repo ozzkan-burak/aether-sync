@@ -1,53 +1,127 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AetherSync Dev Console</title>
+    <title>AetherSync | Collaborative Workspace</title>
     <style>
+      :root {
+        --bg: #191919;
+        --surface: #202020;
+        --text: #d3d3d3;
+        --accent: #3b82f6;
+      }
       body {
-        font-family: monospace;
-        padding: 20px;
-        background: #1a1a1a;
-        color: #eee;
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
       }
-      button {
-        padding: 10px 15px;
+
+      /* Editor Alanı */
+      #editor-container {
+        flex: 2;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #333;
+      }
+      .status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        font-size: 12px;
+      }
+      .offline-toggle {
         cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid #444;
         background: #333;
-        color: #fff;
-        border: 1px solid #555;
-        margin-right: 10px;
+        color: white;
       }
-      button:hover {
-        background: #444;
+      .offline-toggle.active {
+        background: #b91c1c;
+        border-color: #ef4444;
       }
-      #logs {
-        margin-top: 20px;
-        border-top: 1px solid #444;
-        padding-top: 10px;
-        max-height: 400px;
+
+      #doc-title {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        outline: none;
+        width: 100%;
+      }
+      #doc-content {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 18px;
+        line-height: 1.6;
+        outline: none;
+        width: 100%;
+        height: 100%;
+        resize: none;
+      }
+
+      /* Log Paneli */
+      #log-panel {
+        flex: 1;
+        background: var(--surface);
+        padding: 20px;
+        font-family: monospace;
+        font-size: 12px;
         overflow-y: auto;
       }
       .log-entry {
-        margin-bottom: 5px;
-        border-left: 3px solid #00ff00;
+        margin-bottom: 8px;
+        border-left: 2px solid var(--accent);
         padding-left: 10px;
       }
-      .error {
-        border-left-color: #ff0000;
-        color: #ffaaaa;
+      .log-entry.error {
+        border-left-color: #ef4444;
+        color: #fca5a5;
+      }
+      h3 {
+        font-size: 14px;
+        text-transform: uppercase;
+        color: #666;
+        letter-spacing: 1px;
       }
     </style>
   </head>
   <body>
-    <h1>AetherSync: System Status (No-React)</h1>
-    <div id="controls">
-      <button id="btn-init">1. Init DB</button>
-      <button id="btn-add">2. Add Random Ops (Batch)</button>
-      <button id="btn-read">3. Read All</button>
+    <div id="editor-container">
+      <div class="status-bar">
+        <div id="connection-status">Sistem Başlatılıyor...</div>
+        <button id="offline-switch" class="offline-toggle">
+          Uçak Modu: Kapalı
+        </button>
+      </div>
+      <input
+        type="text"
+        id="doc-title"
+        placeholder="Başlıksız Doküman"
+        spellcheck="false"
+      />
+      <textarea
+        id="doc-content"
+        placeholder="Yazmaya başlayın..."
+        spellcheck="false"
+      ></textarea>
     </div>
-    <div id="logs"></div>
+
+    <div id="log-panel">
+      <h3>Sistem Akışı (Debug)</h3>
+      <div id="logs"></div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

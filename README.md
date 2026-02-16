@@ -74,22 +74,22 @@ AetherSync, bir **Headless Sync SDK** (Arayüzsüz Senkronizasyon Kiti) olarak i
 
 ```mermaid
 graph TD
-  A[UI / User Input] -->|1. Debounce & Batch| B[Main Thread Logic]
-
+  A[UI / User Input] -- "1. Debounce & Batch" --> B[Main Thread Logic]
+  
   subgraph Main_Context [Main Thread - Application Logic]
       B{Conflict Manager}
-      B -->|2. Optimistic Update| A
-      B -->|3. Vector Clock Comparison| B
-      B -->|4. Smart Merge Strategy| A
+      B -- "2. Optimistic Update" --> A
+      B -- "3. Vector Clock Comparison" --> B
+      B -- "4. Smart Merge Strategy" --> A
   end
 
   subgraph Web_Worker [Web Worker - Storage Layer]
-      B -->|5. Async Write (PostMessage)| D[(IndexedDB Storage)]
+      B -- "5. Async Write (PostMessage)" --> D[(IndexedDB Storage)]
       D -.->|Load History| B
   end
 
   subgraph Network_Layer [Network / WebSocket]
-      B -->|6. JSON Payload| G[WebSocket Server]
-      G -->|7. Broadcast Ops| B
+      B -- "6. JSON Payload" --> G[WebSocket Server]
+      G -- "7. Broadcast Ops" --> B
   end
 ```
